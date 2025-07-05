@@ -16,19 +16,25 @@ if uploaded_file:
     df['time'] = pd.to_datetime(df['time'])
     df['date'] = df['time'].dt.date
     df['hour'] = df['time'].dt.hour
+    df['minute'] = df['time'].dt.minute
     df['weekday'] = df['time'].dt.day_name()
 
-    def get_session(hour):
-        if 3 <= hour < 9:
+    # Exclude Saturday and Sunday
+    df = df[~df['weekday'].isin(['Saturday', 'Sunday'])]
+
+    # Define sessions using exact times
+    def get_session(hour, minute):
+        total_minutes = hour * 60 + minute
+        if 330 <= total_minutes <= 690:  # 5:30 AM to 11:30 AM
             return 'Asia'
-        elif 9 <= hour < 15:
+        elif 691 <= total_minutes <= 1049:  # 11:31 AM to 5:29 PM
             return 'London'
-        elif 15 <= hour < 21:
+        elif 1050 <= total_minutes <= 1290:  # 5:30 PM to 10:30 PM
             return 'New York'
         else:
             return 'Off Hours'
 
-    df['session'] = df['hour'].apply(get_session)
+    df['session'] = df.apply(lambda row: get_session(row['hour'], row['minute']), axis=1)
 
     st.subheader("Data Preview")
     st.dataframe(df.head(20))
